@@ -1,0 +1,1017 @@
+<!doctype html>
+<html lang="th">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>PYROSCAN Ground Station</title>
+
+        <meta name="title" content="PYROSCAN | Ground Station" />
+        <meta name="title" content="PYROSCAN | Ground Station" />
+        <meta
+            name="description"
+            content="ระบบควบคุมภาคพื้นดินสำหรับโครงการ PYROSCAN ภารกิจดาวเทียม CubeSat เพื่อตรวจจับและเฝ้าระวังไฟป่าแบบ Real-time"
+        />
+        <meta
+            name="keywords"
+            content="PYROSCAN, CubeSat, Wildfire Detection, Ground Station, Satellite, LoRa, ESP32-CAM, ระบบตรวจจับไฟป่า"
+        />
+        <meta name="author" content="Phukhieo Innovaction" />
+
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://pyroscan.basehappy19.site/" />
+        <meta property="og:title" content="PYROSCAN Ground Station" />
+        <meta
+            property="og:description"
+            content="Monitoring wildfire anomalies and satellite telemetry in real-time."
+        />
+        <meta property="og:image" content="/public/PYROSCAN_BANNER.png" />
+        <meta property="twitter:card" content="summary_large_image" />
+        <meta
+            property="twitter:title"
+            content="PYROSCAN Ground Station"
+        />
+        <meta
+            property="twitter:description"
+            content="Wildfire detection CubeSat ground station dashboard."
+        />
+        <meta property="twitter:image" content="/public/PYROSCAN_BANNER.png" />
+
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta
+            name="apple-mobile-web-app-status-bar-style"
+            content="black-translucent"
+        />
+        <meta name="apple-mobile-web-app-title" content="PYROSCAN MS" />
+
+        <link rel="icon" type="image/png" href="/public/PYROSCAN.png" />
+        <meta name="theme-color" content="#0f172a" />
+
+        <script src="https://cdn.tailwindcss.com"></script>
+        <link
+            rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+        />
+        <link
+            rel="stylesheet"
+            href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700&family=Share+Tech+Mono&display=swap"
+            rel="stylesheet"
+        />
+        <link
+            rel="apple-touch-icon"
+            sizes="180x180"
+            href="/public/favicon_io/apple-touch-icon.png"
+        />
+        <link
+            rel="icon"
+            type="image/png"
+            sizes="32x32"
+            href="/public/favicon_io/favicon-32x32.png"
+        />
+        <link
+            rel="icon"
+            type="image/png"
+            sizes="16x16"
+            href="/public/favicon_io/favicon-16x16.png"
+        />
+        <link rel="manifest" href="/public/favicon_io/site.webmanifest" />
+        <style>
+            body {
+                font-family: "Sarabun", sans-serif;
+                background-color: #0f172a;
+                color: #e2e8f0;
+            }
+            .font-mono {
+                font-family: "Share Tech Mono", monospace;
+            }
+
+            ::-webkit-scrollbar {
+                width: 6px;
+                height: 6px;
+            }
+            ::-webkit-scrollbar-track {
+                background: #1e293b;
+            }
+            ::-webkit-scrollbar-thumb {
+                background: #475569;
+                border-radius: 4px;
+            }
+
+            @keyframes pulse-red {
+                0% {
+                    box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.7);
+                }
+                70% {
+                    box-shadow: 0 0 0 15px rgba(220, 38, 38, 0);
+                }
+                100% {
+                    box-shadow: 0 0 0 0 rgba(220, 38, 38, 0);
+                }
+            }
+            .alert-active {
+                animation: pulse-red 2s infinite;
+                border: 2px solid #ef4444;
+            }
+            .blinking {
+                animation: blinker 1s linear infinite;
+            }
+            @keyframes blinker {
+                50% {
+                    opacity: 0;
+                }
+            }
+            .animate-fade-in {
+                animation: fadeIn 0.3s ease-in;
+            }
+            @keyframes fadeIn {
+                from {
+                    opacity: 0;
+                    transform: translateY(-5px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+
+            /* Responsive Map Height */
+            #map {
+                height: 350px;
+                width: 100%;
+            }
+            @media (min-width: 1024px) {
+                #map {
+                    height: 100%;
+                }
+            }
+        </style>
+    </head>
+    <body class="h-screen flex flex-col overflow-hidden">
+        <header
+            class="bg-slate-900 border-b border-slate-700 p-3 flex items-center justify-between px-4 lg:px-6 shadow-lg z-20 shrink-0"
+        >
+            <div class="flex items-center gap-3">
+                <div
+                    class="h-16 w-16 flex items-center justify-center bg-slate-800 rounded-lg border border-slate-700 shadow-inner overflow-hidden shrink-0"
+                >
+                    <img
+                        src="/public/PYROSCAN.png"
+                        alt="LOGO"
+                        class="h-16 w-16 object-contain filter drop-shadow-[0_0_8px_rgba(14,165,233,0.5)]"
+                    />
+                </div>
+                <div>
+                    <h1
+                        class="text-lg lg:text-xl font-black tracking-wider text-white flex flex-col sm:flex-row sm:items-center sm:gap-2 leading-tight"
+                    >
+                        PYROSCAN
+                    </h1>
+                    <p
+                        class="text-[10px] text-slate-400 uppercase tracking-wide hidden sm:block"
+                    >
+                        Pyro-Optical Remote Observation System | GS-TH-01
+                    </p>
+                </div>
+            </div>
+
+            <div class="hidden md:flex gap-6 items-center">
+                <div class="text-center border-r border-slate-700 pr-6">
+                    <p class="text-[10px] text-slate-400">MISSION TIME</p>
+                    <p
+                        class="font-mono text-base text-emerald-400"
+                        id="mission-time"
+                    >
+                        00:00:00
+                    </p>
+                </div>
+
+                <div class="text-center">
+                    <p class="text-[10px] text-slate-400">SIGNAL (LoRa)</p>
+                    <div class="flex items-end gap-1 h-5 justify-center mt-1">
+                        <div
+                            id="sig-bar-1"
+                            class="w-1.5 h-2 bg-emerald-500 rounded-sm"
+                        ></div>
+                        <div
+                            id="sig-bar-2"
+                            class="w-1.5 h-3 bg-emerald-500 rounded-sm"
+                        ></div>
+                        <div
+                            id="sig-bar-3"
+                            class="w-1.5 h-4 bg-emerald-500 rounded-sm"
+                        ></div>
+                        <div
+                            id="sig-bar-4"
+                            class="w-1.5 h-5 bg-emerald-500 rounded-sm"
+                        ></div>
+                    </div>
+                    <p
+                        class="font-mono text-[10px] text-emerald-400 mt-0.5"
+                        id="sig-display"
+                    >
+                        -95 dBm
+                    </p>
+                </div>
+
+                <div
+                    class="flex items-center gap-2 bg-slate-800 rounded-full px-3 py-1 border border-slate-600"
+                >
+                    <span class="text-[10px] font-semibold text-slate-300"
+                        >SAT POWER</span
+                    >
+                    <label
+                        class="relative inline-flex items-center cursor-pointer"
+                    >
+                        <input
+                            type="checkbox"
+                            checked
+                            class="sr-only peer"
+                            id="sat-power-toggle"
+                        />
+                        <div
+                            class="w-8 h-4 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-emerald-500"
+                        ></div>
+                    </label>
+                </div>
+            </div>
+        </header>
+
+        <main class="flex-1 flex flex-col lg:flex-row overflow-hidden relative">
+            <div
+                class="w-full lg:w-2/3 flex flex-col border-r border-slate-700 h-full overflow-y-auto lg:overflow-hidden"
+            >
+                <div class="relative flex-1 bg-slate-800 min-h-[300px]">
+                    <div id="map" class="z-10"></div>
+                    <div
+                        class="absolute top-4 left-4 z-[400] bg-slate-900/90 backdrop-blur border border-slate-600 p-2 rounded shadow-xl pointer-events-none"
+                    >
+                        <div class="flex items-center gap-2 mb-1">
+                            <i
+                                class="fa-solid fa-location-crosshairs text-sky-400 text-xs"
+                            ></i>
+                            <span class="text-[10px] text-slate-300 font-bold"
+                                >LAT / LON</span
+                            >
+                        </div>
+                        <p
+                            class="font-mono text-sm text-white"
+                            id="lat-lon-display"
+                        >
+                            18.7915 N, 98.9560 E
+                        </p>
+                    </div>
+                </div>
+
+                <div
+                    class="h-auto lg:h-1/3 bg-slate-900 p-3 grid grid-cols-2 gap-3 border-t border-slate-700 shrink-0"
+                >
+                    <div
+                        class="bg-black rounded border border-slate-700 relative overflow-hidden group h-[120px] lg:h-full"
+                    >
+                        <p
+                            class="absolute top-2 left-2 text-[9px] bg-black/50 px-2 rounded text-white z-10"
+                        >
+                            ESP32-CAM (VISUAL)
+                        </p>
+                        <img
+                            id="visual-feed"
+                            src="https://images.unsplash.com/photo-1542273917363-3b1817f69a2d?q=80&w=2074"
+                            class="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition duration-500"
+                            alt="Visual"
+                        />
+                        <button
+                            onclick="requestImage()"
+                            class="absolute bottom-2 right-2 bg-sky-600 hover:bg-sky-500 text-white text-[9px] px-2 py-1 rounded shadow flex items-center gap-1 transition"
+                        >
+                            <i class="fa-solid fa-camera"></i> CAPTURE
+                        </button>
+                    </div>
+                    <div
+                        class="bg-black rounded border border-slate-700 relative overflow-hidden h-[120px] lg:h-full"
+                    >
+                        <p
+                            class="absolute top-2 left-2 text-[9px] bg-black/50 px-2 rounded text-white z-10"
+                        >
+                            MLX90640 (THERMAL)
+                        </p>
+                        <div
+                            class="w-full h-full flex items-center justify-center bg-indigo-950/50"
+                            id="thermal-placeholder"
+                        >
+                            <div class="text-center">
+                                <i
+                                    class="fa-solid fa-fire-flame-curved text-2xl text-slate-700 mb-1"
+                                ></i>
+                                <p class="text-[9px] text-slate-500">Normal</p>
+                            </div>
+                        </div>
+                        <img
+                            id="thermal-feed"
+                            src="https://www.tools.in.th/wp-content/uploads/2023/02/thermal-fire-fighting.jpg"
+                            class="hidden w-full h-full object-cover opacity-80 mix-blend-screen"
+                            alt="Thermal"
+                        />
+                    </div>
+                </div>
+            </div>
+
+            <div
+                class="w-full lg:w-1/3 bg-slate-900 flex flex-col h-full overflow-hidden border-l border-slate-700"
+            >
+                <div class="flex-1 overflow-y-auto p-4 space-y-3">
+                    <div
+                        class="bg-slate-800 p-3 rounded border border-slate-700 flex justify-between items-center transition-all duration-300"
+                        id="status-card"
+                    >
+                        <div>
+                            <p class="text-[10px] text-slate-400">
+                                SYSTEM STATUS
+                            </p>
+                            <h2
+                                class="text-lg font-bold text-emerald-400"
+                                id="system-status"
+                            >
+                                IDLE / MONITORING
+                            </h2>
+                        </div>
+                        <div
+                            class="h-3 w-3 rounded-full bg-emerald-500 animate-pulse"
+                            id="status-dot"
+                        ></div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div
+                            class="bg-slate-800 p-3 rounded border border-slate-700"
+                        >
+                            <p
+                                class="text-[10px] text-slate-400 flex justify-between"
+                            >
+                                ALTITUDE
+                                <i
+                                    class="fa-solid fa-arrow-up text-slate-500"
+                                ></i>
+                            </p>
+                            <p class="font-mono text-xl text-white mt-1">
+                                <span id="altitude-val">1,500</span>
+                                <span class="text-xs text-slate-500">m</span>
+                            </p>
+                        </div>
+                        <div
+                            class="bg-slate-800 p-3 rounded border border-slate-700"
+                        >
+                            <p
+                                class="text-[10px] text-slate-400 flex justify-between"
+                            >
+                                INT. TEMP
+                                <i
+                                    class="fa-solid fa-temperature-half text-slate-500"
+                                ></i>
+                            </p>
+                            <p class="font-mono text-xl text-white mt-1">
+                                <span id="temp-val">34.2</span>
+                                <span class="text-xs text-slate-500">°C</span>
+                            </p>
+                        </div>
+                    </div>
+
+                    <div
+                        class="bg-slate-800 p-3 rounded border border-slate-700"
+                    >
+                        <div class="flex justify-between mb-2">
+                            <p class="text-[10px] text-slate-400">
+                                BATTERY (18650 x2)
+                            </p>
+                            <span
+                                class="font-mono text-emerald-400 text-xs"
+                                id="batt-percent"
+                                >85%</span
+                            >
+                        </div>
+                        <div class="w-full bg-slate-700 rounded-full h-2">
+                            <div
+                                class="bg-emerald-500 h-2 rounded-full transition-all duration-500"
+                                style="width: 85%"
+                                id="batt-bar"
+                            ></div>
+                        </div>
+                        <div
+                            class="flex justify-between mt-1 text-[10px] font-mono text-slate-500"
+                        >
+                            <span>4.02 V</span><span>Discharging</span>
+                        </div>
+                    </div>
+
+                    <div
+                        class="bg-slate-800 p-3 rounded border border-slate-700"
+                    >
+                        <div
+                            class="flex justify-between items-center mb-2 border-b border-slate-700 pb-1"
+                        >
+                            <p class="text-[10px] text-slate-400">
+                                POWER CONSUMPTION
+                            </p>
+                            <i
+                                class="fa-solid fa-bolt text-yellow-500 text-xs"
+                            ></i>
+                        </div>
+                        <div
+                            class="grid grid-cols-3 gap-2 text-center font-mono"
+                        >
+                            <div
+                                class="bg-slate-900/50 rounded p-1 border border-slate-700"
+                            >
+                                <span
+                                    class="text-[8px] text-slate-500 block uppercase"
+                                    >Min</span
+                                >
+                                <span
+                                    class="text-sm text-slate-300"
+                                    id="min-curr"
+                                    >--</span
+                                >
+                            </div>
+                            <div
+                                class="bg-slate-900 rounded p-1 border border-sky-500/30 relative overflow-hidden shadow-[0_0_10px_rgba(14,165,233,0.1)]"
+                            >
+                                <div
+                                    class="absolute inset-0 bg-sky-500/5 animate-pulse pointer-events-none"
+                                ></div>
+                                <span
+                                    class="text-[8px] text-sky-400 block uppercase font-bold"
+                                    >Current</span
+                                >
+                                <span
+                                    class="text-lg font-bold text-white block"
+                                    id="curr-curr"
+                                    >--</span
+                                >
+                                <span class="text-[8px] text-sky-600 block"
+                                    >mA</span
+                                >
+                            </div>
+                            <div
+                                class="bg-slate-900/50 rounded p-1 border border-slate-700"
+                            >
+                                <span
+                                    class="text-[8px] text-slate-500 block uppercase"
+                                    >Max</span
+                                >
+                                <span
+                                    class="text-sm text-slate-300"
+                                    id="max-curr"
+                                    >--</span
+                                >
+                            </div>
+                        </div>
+                    </div>
+
+                    <div
+                        class="flex-1 flex flex-col bg-slate-800 rounded border border-slate-700 min-h-[150px]"
+                    >
+                        <div
+                            class="p-2 border-b border-slate-700 flex justify-between items-center bg-slate-800/80"
+                        >
+                            <p
+                                class="text-[10px] text-slate-300 font-bold uppercase tracking-wider"
+                            >
+                                <i
+                                    class="fa-solid fa-clock-rotate-left mr-1"
+                                ></i>
+                                Fire Event History
+                            </p>
+                            <span
+                                id="history-count"
+                                class="text-[9px] bg-slate-700 px-2 py-0.5 rounded text-slate-300"
+                                >0 Events</span
+                            >
+                        </div>
+                        <div
+                            class="overflow-y-auto flex-1 max-h-[150px]"
+                            id="history-list"
+                        >
+                            <div
+                                id="no-history"
+                                class="p-6 text-center text-xs text-slate-500 italic"
+                            >
+                                No historical data recorded
+                            </div>
+                        </div>
+                    </div>
+
+                    <div
+                        class="bg-black p-2 font-mono text-[9px] text-green-500 border border-slate-700 rounded h-20 overflow-y-auto"
+                        id="console-log"
+                    >
+                        <p>> SYSTEM_INIT: OK</p>
+                        <p>> LINK_ESTABLISHED: PYROSCAN_UNIT_01</p>
+                    </div>
+
+                    <div class="border-t border-slate-800 pt-2 pb-2">
+                        <button
+                            onclick="triggerFireAlert()"
+                            class="w-full bg-red-900/30 hover:bg-red-800 border border-red-800/50 text-red-200 py-3 rounded text-xs font-bold transition flex items-center justify-center gap-2 uppercase tracking-widest active:scale-95"
+                        >
+                            <i class="fa-solid fa-fire"></i> Simulate Fire
+                            Detection
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <footer
+            class="bg-slate-950 border-t border-slate-800 p-4 text-center shrink-0 z-30"
+        >
+            <div class="max-w-4xl mx-auto space-y-2">
+                <p
+                    class="text-xs text-slate-300 font-bold uppercase tracking-widest"
+                >
+                    Developed by Team
+                    <span class="text-sky-500">Phukhieo Innovaction</span>
+                </p>
+                <div class="h-px w-12 bg-slate-800 mx-auto my-2"></div>
+                <p class="text-[10px] text-slate-500 leading-relaxed">
+                    ใช้สำหรับแข่งขัน โครงการ
+                    <span class="text-slate-400"
+                        >Creative and Talented Youth Leading Science &
+                        Technology 2026</span
+                    ><br />
+                    ภายใต้แนวคิด
+                    <span class="text-slate-400 font-semibold"
+                        >“การป้องกันและรับมือภัยพิบัติทางธรรมชาติ”</span
+                    >
+                    เท่านั้น
+                </p>
+            </div>
+        </footer>
+
+        <div
+            id="fire-modal"
+            class="fixed inset-0 bg-black/90 z-[9999] hidden flex items-center justify-center p-4 backdrop-blur-sm"
+        >
+            <div
+                class="bg-slate-900 border-2 border-red-600 rounded-xl p-6 max-w-md w-full shadow-[0_0_50px_rgba(220,38,38,0.5)] relative transform transition-all scale-100"
+            >
+                <div class="flex items-center gap-4 mb-4 text-red-500">
+                    <i
+                        class="fa-solid fa-triangle-exclamation text-5xl blinking"
+                    ></i>
+                    <div>
+                        <h2 class="text-2xl font-black italic tracking-tighter">
+                            FIRE DETECTED!
+                        </h2>
+                        <p class="text-xs text-red-400/80 uppercase">
+                            Satellite Scan Confirmed Anomaly
+                        </p>
+                    </div>
+                </div>
+                <div
+                    class="bg-slate-800 h-1.5 w-full rounded-full overflow-hidden mb-1"
+                >
+                    <div
+                        id="countdown-bar"
+                        class="bg-red-500 h-full w-full transition-all duration-1000 linear"
+                    ></div>
+                </div>
+                <p
+                    class="text-[10px] text-red-400 text-right font-mono mb-4 uppercase"
+                >
+                    Auto-report in: <span id="countdown-text">10</span>s
+                </p>
+                <div
+                    class="bg-black/50 border border-slate-700 rounded p-2 mb-4"
+                >
+                    <div class="flex gap-2 h-20">
+                        <div class="w-1/2 relative">
+                            <span
+                                class="absolute top-1 left-1 text-[8px] bg-red-600 text-white px-1 rounded"
+                                >THERMAL</span
+                            >
+                            <img
+                                src="https://images.unsplash.com/photo-1542273917363-3b1817f69a2d?q=80&w=2074"
+                                class="w-full h-full object-cover rounded border border-red-900/50"
+                            />
+                        </div>
+                        <div class="w-1/2 relative">
+                            <span
+                                class="absolute top-1 left-1 text-[8px] bg-sky-600 text-white px-1 rounded"
+                                >VISUAL</span
+                            >
+                            <img
+                                src="https://www.tools.in.th/wp-content/uploads/2023/02/thermal-fire-fighting.jpg"
+                                class="w-full h-full object-cover rounded border border-slate-700"
+                            />
+                        </div>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3 mb-6 font-mono text-xs">
+                    <div
+                        class="bg-slate-800 p-2 rounded border border-slate-700"
+                    >
+                        <span class="text-slate-500 text-[9px] block"
+                            >MAX TEMP</span
+                        >
+                        <span class="text-red-400 font-bold text-sm"
+                            >482 °C</span
+                        >
+                    </div>
+                    <div
+                        class="bg-slate-800 p-2 rounded border border-slate-700"
+                    >
+                        <span class="text-slate-500 text-[9px] block"
+                            >AI CONFIDENCE</span
+                        >
+                        <span class="text-emerald-400 font-bold text-sm"
+                            >98.5%</span
+                        >
+                    </div>
+                </div>
+                <button
+                    onclick="resetAlert()"
+                    class="w-full bg-red-600 hover:bg-red-500 text-white font-bold py-3.5 rounded-lg shadow-lg hover:shadow-red-600/20 transition active:scale-95 uppercase tracking-wider text-sm"
+                >
+                    Acknowledge & Alert Authorities
+                </button>
+            </div>
+        </div>
+
+        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+        <script>
+            // --- Map Setup ---
+            const map = L.map("map", { zoomControl: false }).setView(
+                [18.7915, 98.956],
+                14,
+            );
+            L.tileLayer(
+                "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+                { attribution: "Tiles &copy; Esri" },
+            ).addTo(map);
+            L.control.zoom({ position: "bottomright" }).addTo(map);
+
+            const satIcon = L.divIcon({
+                className: "custom-div-icon",
+                html: "<div style='background-color:#0ea5e9; width:12px; height:12px; border-radius:50%; border:2px solid white; box-shadow:0 0 10px #0ea5e9;'></div>",
+                iconSize: [12, 12],
+            });
+            const fireIcon = L.divIcon({
+                className: "custom-div-icon",
+                html: "<div class='blinking' style='background-color:#ef4444; width:24px; height:24px; border-radius:50%; border:2px solid white; box-shadow:0 0 20px #ef4444; display:flex; align-items:center; justify-content:center;'><i class='fa-solid fa-fire text-white text-[12px]'></i></div>",
+                iconSize: [24, 24],
+            });
+            const satMarker = L.marker([18.7915, 98.956], {
+                icon: satIcon,
+            }).addTo(map);
+            let fireMarker = null;
+
+            // --- Variables ---
+            let isFireActive = false,
+                isSatOn = true,
+                altitude = 1232,
+                lat = 13.6510906,
+                lon = 100.4965286,
+                battery = 85.0,
+                missionTime = 0;
+            let fireHistory = [],
+                countdownTimer = null,
+                countdownValue = 10,
+                audioCtx = null,
+                sirenInterval = null;
+            let sessionMinCurrent = 9999,
+                sessionMaxCurrent = 0;
+
+            // --- Helpers ---
+            function addLog(msg) {
+                const logDiv = document.getElementById("console-log");
+                const time = new Date().toLocaleTimeString("th-TH");
+                const p = document.createElement("p");
+                p.innerText = `> [${time}] ${msg}`;
+                logDiv.prepend(p);
+                if (logDiv.children.length > 20)
+                    logDiv.removeChild(logDiv.lastChild);
+            }
+            function formatTime(s) {
+                return new Date(s * 1000).toISOString().substr(11, 8);
+            }
+
+            // --- Main Loop ---
+            setInterval(() => {
+                if (!isSatOn) return;
+                missionTime++;
+                document.getElementById("mission-time").innerText =
+                    formatTime(missionTime);
+
+                // Telemetry
+                altitude = 1500 + (Math.random() * 20 - 10);
+                document.getElementById("altitude-val").innerText =
+                    Math.round(altitude).toLocaleString();
+                lat += Math.random() * 0.0001 - 0.00005;
+                lon += Math.random() * 0.0001 - 0.00005;
+                satMarker.setLatLng([lat, lon]);
+                document.getElementById("lat-lon-display").innerText =
+                    `${lat.toFixed(4)} N, ${lon.toFixed(4)} E`;
+                if (!isFireActive) map.panTo([lat, lon]);
+
+                // Battery
+                battery -= isFireActive ? 0.05 : 0.01;
+                document.getElementById("batt-percent").innerText =
+                    Math.max(0, battery).toFixed(1) + "%";
+                document.getElementById("batt-bar").style.width =
+                    Math.max(0, battery) + "%";
+
+                // Signal Wave Logic
+                let signalVariation = Math.random() * 6 - 3;
+                let currentRSSI = parseInt(
+                    document.getElementById("sig-display").innerText,
+                );
+                let newRSSI = currentRSSI + signalVariation;
+                if (newRSSI > -60) newRSSI = -60;
+                if (newRSSI < -115) newRSSI = -115;
+                document.getElementById("sig-display").innerText =
+                    Math.round(newRSSI) + " dBm";
+
+                const bars = [
+                    document.getElementById("sig-bar-1"),
+                    document.getElementById("sig-bar-2"),
+                    document.getElementById("sig-bar-3"),
+                    document.getElementById("sig-bar-4"),
+                ];
+                let activeBars = 0;
+                if (newRSSI > -80) activeBars = 4;
+                else if (newRSSI > -95) activeBars = 3;
+                else if (newRSSI > -105) activeBars = 2;
+                else if (newRSSI > -112) activeBars = 1;
+
+                bars.forEach((bar, index) => {
+                    if (index < activeBars) {
+                        let colorClass =
+                            activeBars <= 1
+                                ? "bg-red-500"
+                                : activeBars <= 2
+                                  ? "bg-yellow-500"
+                                  : "bg-emerald-500";
+                        bar.className = `w-1.5 h-${index + 2} ${colorClass} rounded-sm transition-colors duration-300`;
+                    } else {
+                        bar.className = `w-1.5 h-${index + 2} bg-slate-600 rounded-sm transition-colors duration-300`;
+                    }
+                });
+
+                // Power Consumption
+                let baseCurrent = isFireActive ? 420 : 160;
+                let current = baseCurrent + Math.floor(Math.random() * 20 - 10);
+                if (current < sessionMinCurrent) sessionMinCurrent = current;
+                if (current > sessionMaxCurrent) sessionMaxCurrent = current;
+                document.getElementById("curr-curr").innerText = current;
+                document.getElementById("min-curr").innerText =
+                    sessionMinCurrent;
+                document.getElementById("max-curr").innerText =
+                    sessionMaxCurrent;
+            }, 1000);
+
+            // --- REALISTIC LOG GENERATOR ---
+            // ฟังก์ชันสร้าง Log ข้อมูลเทคนิคแบบสุ่มตามจริง
+            setInterval(() => {
+                if (!isSatOn) return;
+
+                // ชุดข้อมูลตัวอย่างสำหรับการสุ่ม (Telemetry จริง)
+                const logs = [
+                    `GPS_FIX: LAT ${lat.toFixed(4)} LON ${lon.toFixed(4)}`,
+                    `BATTERY_VOLTAGE: ${(4.02 + (Math.random() * 0.05 - 0.025)).toFixed(2)}V`,
+                    `LORA_PACKET: RSSI -${Math.floor(Math.random() * 10 + 90)}dBm SNR ${Math.floor(Math.random() * 5 + 5)}`,
+                    `IMU_SENSOR: GYRO_Z ${Math.random().toFixed(3)} RAD/S`,
+                    `MLX90640: THERMAL_FRAME_CAPTURED`,
+                    `ESP32_MEM: HEAP_FREE ${Math.floor(Math.random() * 5000 + 120000)} BYTES`,
+                    `SOLAR_INPUT: ${(Math.random() * 0.5).toFixed(2)}W (SHADOW)`,
+                    `WATCHDOG: SYSTEM_NORMAL_OP`,
+                    `TELEMETRY_TX: SEQ_ID_${Math.floor(Math.random() * 10000)} SENT`,
+                ];
+
+                // สุ่มเลือกมา 1 อันแล้วแสดงผล
+                const randomLog = logs[Math.floor(Math.random() * logs.length)];
+                addLog(randomLog);
+            }, 2500); // ความเร็ว 2.5 วินาทีต่อครั้ง (กำลังดี อ่านทัน)
+
+            // --- Sound ---
+            function playSiren() {
+                if (!audioCtx)
+                    audioCtx = new (
+                        window.AudioContext || window.webkitAudioContext
+                    )();
+                function beep(f, d) {
+                    let o = audioCtx.createOscillator(),
+                        g = audioCtx.createGain();
+                    o.type = "square";
+                    o.frequency.value = f;
+                    o.connect(g);
+                    g.connect(audioCtx.destination);
+                    g.gain.setValueAtTime(0.05, audioCtx.currentTime);
+                    g.gain.exponentialRampToValueAtTime(
+                        0.0001,
+                        audioCtx.currentTime + d,
+                    );
+                    o.start();
+                    o.stop(audioCtx.currentTime + d);
+                }
+                sirenInterval = setInterval(() => {
+                    beep(880, 0.2);
+                    setTimeout(() => beep(1100, 0.2), 250);
+                }, 500);
+            }
+            function stopSiren() {
+                if (sirenInterval) clearInterval(sirenInterval);
+            }
+
+            // --- Fire Logic ---
+            function triggerFireAlert() {
+                if (isFireActive || !isSatOn) return;
+                isFireActive = true;
+                playSiren();
+                document
+                    .getElementById("status-card")
+                    .classList.add("alert-active");
+                document.getElementById("system-status").innerText =
+                    "CRITICAL: FIRE DETECTED";
+                document.getElementById("system-status").className =
+                    "text-lg font-bold text-red-500";
+                document.getElementById("status-dot").className =
+                    "h-3 w-3 rounded-full bg-red-500 animate-ping";
+
+                const fLat = lat + 0.002,
+                    fLon = lon + 0.002;
+                fireMarker = L.marker([fLat, fLon], { icon: fireIcon }).addTo(
+                    map,
+                );
+                map.flyTo([fLat, fLon], 16);
+                document
+                    .getElementById("thermal-placeholder")
+                    .classList.add("hidden");
+                document
+                    .getElementById("thermal-feed")
+                    .classList.remove("hidden");
+                document
+                    .getElementById("fire-modal")
+                    .classList.remove("hidden");
+                startCountdown();
+                addLog("ALERT: THERMAL_ANOMALY_CONFIRMED (>480C)");
+            }
+
+            function startCountdown() {
+                countdownValue = 10;
+                const bar = document.getElementById("countdown-bar");
+                bar.style.width = "100%";
+                countdownTimer = setInterval(() => {
+                    countdownValue--;
+                    document.getElementById("countdown-text").innerText =
+                        countdownValue;
+                    bar.style.width = countdownValue * 10 + "%";
+                    if (countdownValue <= 0) {
+                        clearInterval(countdownTimer);
+                        alert("Auto-Reporting...");
+                        resetAlert();
+                        addLog("AUTO_REPORT: SENT");
+                    }
+                }, 1000);
+            }
+
+            function resetAlert() {
+                if (isFireActive && fireMarker) {
+                    saveFireToHistory(
+                        fireMarker.getLatLng().lat,
+                        fireMarker.getLatLng().lng,
+                    );
+                }
+                isFireActive = false;
+                stopSiren();
+                if (countdownTimer) clearInterval(countdownTimer);
+                document.getElementById("fire-modal").classList.add("hidden");
+                document
+                    .getElementById("status-card")
+                    .classList.remove("alert-active");
+                document.getElementById("system-status").innerText =
+                    "IDLE / MONITORING";
+                document.getElementById("system-status").className =
+                    "text-lg font-bold text-emerald-400";
+                document.getElementById("status-dot").className =
+                    "h-3 w-3 rounded-full bg-emerald-500 animate-pulse";
+                if (fireMarker) map.removeLayer(fireMarker);
+                map.flyTo([lat, lon], 14);
+                document
+                    .getElementById("thermal-placeholder")
+                    .classList.remove("hidden");
+                document.getElementById("thermal-feed").classList.add("hidden");
+                addLog("SYSTEM: MISSION_RESUMED");
+            }
+
+            // --- History ---
+            function saveFireToHistory(l, n) {
+                const id = Date.now(),
+                    time = new Date().toLocaleTimeString("th-TH"),
+                    temp = 450 + Math.floor(Math.random() * 50);
+                const hIcon = L.divIcon({
+                    className: "custom-div-icon",
+                    html: `<div onclick="focusHistoryEvent(${id})" style='background-color:#f97316; width:12px; height:12px; border-radius:50%; border:2px solid white; cursor:pointer; box-shadow:0 0 8px #f97316;'></div>`,
+                    iconSize: [12, 12],
+                });
+                const m = L.marker([l, n], { icon: hIcon })
+                    .addTo(map)
+                    .bindPopup(
+                        `<b>Fire Event Log</b><br>Time: ${time}<br>Temp: ${temp}°C`,
+                    );
+                fireHistory.push({
+                    id,
+                    time,
+                    lat: l.toFixed(4),
+                    lon: n.toFixed(4),
+                    temp,
+                    marker: m,
+                });
+                renderHistoryUI();
+            }
+
+            function renderHistoryUI() {
+                const list = document.getElementById("history-list");
+                document.getElementById("history-count").innerText =
+                    fireHistory.length + " Events";
+                document
+                    .getElementById("no-history")
+                    .classList.toggle("hidden", fireHistory.length > 0);
+                const old = list.querySelectorAll(".history-item");
+                old.forEach((e) => e.remove());
+                fireHistory.forEach((e) => {
+                    const row = document.createElement("div");
+                    row.className =
+                        "history-item p-2 border-b border-slate-700/50 flex justify-between items-center text-[10px] hover:bg-slate-700/30 transition animate-fade-in";
+                    row.innerHTML = `<div><p class="text-slate-300 font-mono font-bold">${e.time} | ${e.temp}°C</p><p class="text-slate-500">${e.lat}, ${e.lon}</p></div>
+                        <div class="flex gap-2"><button onclick="focusHistoryEvent(${e.id})" class="text-sky-400 bg-slate-800 p-1.5 rounded"><i class="fa-solid fa-eye"></i></button>
+                        <button onclick="deleteHistoryEvent(${e.id})" class="text-red-400 bg-slate-800 p-1.5 rounded"><i class="fa-solid fa-trash-can"></i></button></div>`;
+                    list.prepend(row);
+                });
+            }
+
+            function focusHistoryEvent(id) {
+                const e = fireHistory.find((x) => x.id === id);
+                if (e) {
+                    map.flyTo([e.lat, e.lon], 16);
+                    e.marker.openPopup();
+                }
+            }
+            function deleteHistoryEvent(id) {
+                const idx = fireHistory.findIndex((x) => x.id === id);
+                if (idx > -1) {
+                    map.removeLayer(fireHistory[idx].marker);
+                    fireHistory.splice(idx, 1);
+                    renderHistoryUI();
+                }
+            }
+
+            // --- Power Toggle ---
+            document
+                .getElementById("sat-power-toggle")
+                .addEventListener("change", function (e) {
+                    isSatOn = e.target.checked;
+                    if (!isSatOn) {
+                        document.getElementById("system-status").innerText =
+                            "OFFLINE";
+                        document.getElementById("system-status").className =
+                            "text-lg font-bold text-slate-500";
+                        document.getElementById("status-dot").className =
+                            "h-3 w-3 rounded-full bg-slate-600";
+                        addLog("SYSTEM_SHUTDOWN: INITIATED");
+                    } else {
+                        document.getElementById("system-status").innerText =
+                            "IDLE / MONITORING";
+                        document.getElementById("system-status").className =
+                            "text-lg font-bold text-emerald-400";
+                        document.getElementById("status-dot").className =
+                            "h-3 w-3 rounded-full bg-emerald-500 animate-pulse";
+                        addLog("SYSTEM_BOOT: SUCCESS");
+                    }
+                });
+
+            function requestImage() {
+                const btn = document.querySelector(
+                    'button[onclick="requestImage()"]',
+                );
+                const old = btn.innerHTML;
+                btn.disabled = true;
+                btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> SYNC`;
+                addLog("CMD: REQUEST_VISUAL_FRAME");
+                setTimeout(() => {
+                    btn.disabled = false;
+                    btn.innerHTML = old;
+                    addLog("DATA: IMAGE_RECEIVED (45KB)");
+                    document.getElementById("visual-feed").style.opacity = "1";
+                    setTimeout(
+                        () =>
+                            (document.getElementById(
+                                "visual-feed",
+                            ).style.opacity = "0.6"),
+                        300,
+                    );
+                }, 1500);
+            }
+        </script>
+    </body>
+</html>
