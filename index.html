@@ -26,10 +26,7 @@
         />
         <meta property="og:image" content="/public/PYROSCAN_BANNER.png" />
         <meta property="twitter:card" content="summary_large_image" />
-        <meta
-            property="twitter:title"
-            content="PYROSCAN Ground Station"
-        />
+        <meta property="twitter:title" content="PYROSCAN Ground Station" />
         <meta
             property="twitter:description"
             content="Wildfire detection CubeSat ground station dashboard."
@@ -622,11 +619,14 @@
                         class="bg-slate-800 p-2 rounded border border-slate-700"
                     >
                         <span class="text-slate-500 text-[9px] block"
-                            >AI CONFIDENCE</span
+                            >COORDINATES</span
                         >
-                        <span class="text-emerald-400 font-bold text-sm"
-                            >98.5%</span
+                        <span
+                            class="text-sky-400 font-bold text-[10px] whitespace-nowrap"
+                            id="alert-coords"
                         >
+                            18.7935 N, 98.9580 E
+                        </span>
                     </div>
                 </div>
                 <button
@@ -793,32 +793,47 @@
                 addLog(randomLog);
             }, 2500); // ความเร็ว 2.5 วินาทีต่อครั้ง (กำลังดี อ่านทัน)
 
-            // --- Sound ---
+            // --- Sound (Cell Broadcast Style) ---
             function playSiren() {
                 if (!audioCtx)
                     audioCtx = new (
                         window.AudioContext || window.webkitAudioContext
                     )();
-                function beep(f, d) {
-                    let o = audioCtx.createOscillator(),
-                        g = audioCtx.createGain();
-                    o.type = "square";
-                    o.frequency.value = f;
-                    o.connect(g);
-                    g.connect(audioCtx.destination);
-                    g.gain.setValueAtTime(0.05, audioCtx.currentTime);
-                    g.gain.exponentialRampToValueAtTime(
-                        0.0001,
-                        audioCtx.currentTime + d,
-                    );
-                    o.start();
-                    o.stop(audioCtx.currentTime + d);
+
+                function playPulse() {
+                    const t = audioCtx.currentTime;
+                    const duration = 0.5; 
+
+                    const osc1 = audioCtx.createOscillator();
+                    const osc2 = audioCtx.createOscillator();
+                    const gainNode = audioCtx.createGain();
+
+                    osc1.type = "sawtooth";
+                    osc2.type = "sawtooth";
+
+                    osc1.frequency.value = 853;
+                    osc2.frequency.value = 960;
+
+                    osc1.connect(gainNode);
+                    osc2.connect(gainNode);
+                    gainNode.connect(audioCtx.destination);
+
+                    gainNode.gain.setValueAtTime(0, t);
+                    gainNode.gain.linearRampToValueAtTime(0.3, t + 0.05);
+                    gainNode.gain.setValueAtTime(0.3, t + duration - 0.05);
+                    gainNode.gain.linearRampToValueAtTime(0, t + duration);
+
+                    osc1.start(t);
+                    osc2.start(t);
+                    osc1.stop(t + duration);
+                    osc2.stop(t + duration);
                 }
-                sirenInterval = setInterval(() => {
-                    beep(880, 0.2);
-                    setTimeout(() => beep(1100, 0.2), 250);
-                }, 500);
+
+                playPulse();
+
+                sirenInterval = setInterval(playPulse, 1000);
             }
+
             function stopSiren() {
                 if (sirenInterval) clearInterval(sirenInterval);
             }
@@ -840,6 +855,9 @@
 
                 const fLat = lat + 0.002,
                     fLon = lon + 0.002;
+
+                document.getElementById("alert-coords").innerText =
+                    `${fLat.toFixed(4)} N, ${fLon.toFixed(4)} E`;
                 fireMarker = L.marker([fLat, fLon], { icon: fireIcon }).addTo(
                     map,
                 );
