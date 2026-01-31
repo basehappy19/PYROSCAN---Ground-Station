@@ -651,10 +651,13 @@
             ).addTo(map);
             L.control.zoom({ position: "bottomright" }).addTo(map);
 
-            const satIcon = L.divIcon({
-                className: "custom-div-icon",
-                html: "<div style='background-color:#0ea5e9; width:12px; height:12px; border-radius:50%; border:2px solid white; box-shadow:0 0 10px #0ea5e9;'></div>",
-                iconSize: [12, 12],
+
+            const satIcon = L.icon({
+                iconUrl: '/public/cubesat.png',  
+                iconSize: [40, 40],              
+                iconAnchor: [20, 20],           
+                popupAnchor: [0, -20],           
+                className: "bg-sky-200 w-12 h-[12px] rounded-full border-2 border-white shadow-[0_0_10px_#0ea5e9] drop-shadow-[0_0_10px_rgba(14,165,233,0.8)] transition-all duration-300",
             });
             const fireIcon = L.divIcon({
                 className: "custom-div-icon",
